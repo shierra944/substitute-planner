@@ -211,6 +211,36 @@ dialog#saveAsk .actions{margin-top:18px}
 ul.removed{list-style:none;margin:0;padding:0}
 ul.removed li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
 ul.removed li:first-child{border-top:none}
+.leavewrap{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:24px;align-items:start;margin-top:22px}
+@media (max-width:860px){.leavewrap{grid-template-columns:1fr}}
+.cal{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead h2{font-family:var(--display);font-size:1.2rem;margin:0}
+.calgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.calgrid .dow{font-size:.8rem;color:var(--muted);text-align:center;font-weight:700}
+.calgrid .day{position:relative;min-height:52px;padding:6px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font-weight:400;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between}
+.calgrid .day .dn{font-variant-numeric:tabular-nums;font-size:.9rem}
+.calgrid .day .cnt{align-self:flex-end;background:var(--slate);color:var(--paper);border-radius:999px;font-size:.8rem;font-weight:700;min-width:22px;padding:1px 7px;text-align:center}
+.calgrid .day.today{border-color:var(--marker)}
+.calgrid .day.sel{border-color:var(--slate);background:var(--slate-soft);box-shadow:inset 0 0 0 1px var(--slate)}
+.calnote{color:var(--muted);font-size:.85rem;margin:10px 0 0}
+.daylist{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.dayhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.dayhead .field{width:180px}
+.daylist h2{font-family:var(--display);font-size:1.4rem;margin:14px 0 2px}
+.bigcount{font-size:1.1rem;margin:0 0 12px}
+.bigcount strong{font-family:var(--display);font-size:2rem;color:var(--slate);margin-right:4px}
+.leavelist{margin:0;padding-left:1.4em}
+.leavelist li{padding:8px 0;border-top:1px solid var(--line)}
+.leavelist li:first-child{border-top:none}
+.leavelist summary{cursor:pointer;list-style:none}
+.leavelist summary::-webkit-details-marker{display:none}
+.leavelist .more{color:var(--slate);font-size:.85rem;font-weight:700;display:block;margin-top:2px}
+.leavelist details[open] .more .sh{display:none}
+.leavelist details:not([open]) .more .hd{display:none}
+.leavelist .who{font-weight:700;display:block}
+.leavelist .meta{color:var(--muted);font-size:.9rem}
+.leavelist table{margin-top:8px;min-width:420px}
 .nofree{color:var(--warn);font-size:.9rem}
 
 .layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
@@ -272,6 +302,7 @@ button.quiet{background:transparent;color:var(--slate)}
   <div id="app" hidden>
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" id="tab-planner" aria-controls="plannerView" aria-selected="true">Substitute planner</button>
+    <button role="tab" id="tab-leaves" aria-controls="leavesView" aria-selected="false">On leave</button>
     <button role="tab" id="tab-loads" aria-controls="loadsView" aria-selected="false">Teaching loads</button>
     <button role="tab" id="tab-teachers" aria-controls="teachersView" aria-selected="false">Teachers</button>
   </nav>
@@ -303,6 +334,10 @@ button.quiet{background:transparent;color:var(--slate)}
   </section>
 
   <div id="out"></div>
+  </div>
+
+  <div id="leavesView" role="tabpanel" aria-labelledby="tab-leaves" hidden>
+    <div id="leavesOut"></div>
   </div>
 
   <div id="loadsView" role="tabpanel" aria-labelledby="tab-loads" hidden>
@@ -465,7 +500,7 @@ $("#signinForm").addEventListener("submit", async e => {
     else {
       auth = {u, p};
       try { ($("#siRemember").checked ? localStorage : sessionStorage).setItem("sp-auth", JSON.stringify(auth)); } catch(e){}
-      showApp(); applyData(j); render(); renderLoads(); renderTeachers();
+      showApp(); applyData(j); render(); renderLeaves(); renderLoads(); renderTeachers();
     }
   } catch(err){ $("#siErr").textContent = "Couldn’t reach the Google Sheet. Check your internet connection and try again."; }
   $("#siBtn").disabled = false; $("#siBtn").textContent = "Sign in";
@@ -485,7 +520,7 @@ async function loadBookings(){
     if (!j.ok) throw new Error(j.error || "Bad response");
     applyData(j);
   } catch(err){ loadState = "error"; }
-  render(); renderLoads(); renderTeachers();
+  render(); renderLeaves(); renderLoads(); renderTeachers();
 }
 function setPositions(list){
   posChanges = {}; pronouns = {}; info = {};
@@ -1087,20 +1122,113 @@ async function saveLoad(reset){
 }
 
 function showTab(which){
-  ["planner","loads","teachers"].forEach(t => {
+  ["planner","leaves","loads","teachers"].forEach(t => {
     $("#"+t+"View").hidden = t !== which;
     $("#tab-"+t).setAttribute("aria-selected", t === which);
   });
+  if (which === "leaves") renderLeaves();
   if (which === "loads") renderLoads();
   if (which === "teachers") renderTeachers();
 }
-["planner","loads","teachers"].forEach(t => $("#tab-"+t).addEventListener("click", () => showTab(t)));
+["planner","leaves","loads","teachers"].forEach(t => $("#tab-"+t).addEventListener("click", () => showTab(t)));
 $(".tabs").addEventListener("keydown", e => {
   if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-  const order = ["planner","loads","teachers"], i = order.indexOf(document.activeElement.id.replace("tab-",""));
+  const order = ["planner","leaves","loads","teachers"], i = order.indexOf(document.activeElement.id.replace("tab-",""));
   if (i < 0) return;
   const next = order[(i + (e.key === "ArrowRight" ? 1 : order.length - 1)) % order.length];
   showTab(next); $("#tab-"+next).focus();
+});
+
+/* ---------- on leave tab (daily summary) ---------- */
+let leaveDay = null, calMonth = null, leavesRefreshing = false;
+function allLeaves(){
+  const m = new Map();
+  bookings.forEach(r => {
+    if (!m.has(r.leaveId)) m.set(r.leaveId, {leaveId:r.leaveId, teacher:r.teacher, from:r.from, to:r.to, rows:[]});
+    m.get(r.leaveId).rows.push(r);
+  });
+  return [...m.values()];
+}
+const isSchoolDay = s => { const w = toD(s).getDay(); return w >= 1 && w <= 5; };
+const leavesOn = day => isSchoolDay(day) ? allLeaves().filter(l => l.from <= day && day <= l.to).sort((a,b) => dn(a.teacher).localeCompare(dn(b.teacher))) : [];
+const shortRange = (f, t) => f === t ? longDate(f) : leavePeriod(f, t);
+
+function renderLeaves(){
+  const out = $("#leavesOut"); if (!out) return;
+  leaveDay = leaveDay || todayYmd();
+  calMonth = calMonth || leaveDay.slice(0,7);
+  const [cy, cm] = calMonth.split("-").map(Number);
+  let html = '';
+  if (loadState === "loading") html += '<div class="msg">Loading saved leaves from the Google Sheet…</div>';
+  if (loadState === "error") html += '<div class="notice">Couldn’t reach the Google Sheet, so this list may be out of date. <button class="link inline" data-act="retry">Try again</button></div>';
+
+  // Month calendar (school days only) with the number of teachers on leave each day
+  html += '<div class="leavewrap"><section class="cal" aria-label="Calendar"><div class="calhead">' +
+    '<button class="quiet small" data-act="cal-prev" aria-label="Previous month">‹</button>' +
+    '<h2>'+MONTH_NAMES[cm-1]+' '+cy+'</h2>' +
+    '<button class="quiet small" data-act="cal-next" aria-label="Next month">›</button></div>' +
+    '<div class="calgrid" role="grid"><div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div>';
+  const first = new Date(cy, cm-1, 1), days = new Date(cy, cm, 0).getDate();
+  let lead = (first.getDay() + 6) % 7;             // Monday = 0
+  if (lead > 4) lead = 0;                          // month starts on a weekend
+  for (let i = 0; i < lead; i++) html += '<div></div>';
+  const today = todayYmd();
+  for (let d = 1; d <= days; d++){
+    const s = ymd(cy, cm, d); if (!isSchoolDay(s)) continue;
+    const n = leavesOn(s).length;
+    html += '<button class="day'+(s===leaveDay?' sel':'')+(s===today?' today':'')+(n?' has':'')+'" data-day="'+s+'" aria-label="'+esc(longDate(s))+': '+n+' on leave"'+(s===leaveDay?' aria-current="date"':'')+'>' +
+      '<span class="dn">'+d+'</span>'+(n ? '<span class="cnt">'+n+'</span>' : '')+'</button>';
+  }
+  html += '</div><p class="calnote">Numbers show how many teachers are on leave that day.</p></section>';
+
+  // The chosen day
+  const list = leavesOn(leaveDay);
+  const d0 = toD(leaveDay), wd = d0.toLocaleDateString("en-US",{weekday:"long"});
+  html += '<section class="daylist" aria-live="polite"><div class="dayhead"><div>' +
+    '<button class="quiet small" data-act="day-prev" aria-label="Previous school day">‹ Prev</button> ' +
+    '<button class="quiet small" data-act="day-today">Today</button> ' +
+    '<button class="quiet small" data-act="day-next" aria-label="Next school day">Next ›</button></div>' +
+    '<div class="field"><label for="leaveDayPick" class="sr">Choose a date</label><input type="date" id="leaveDayPick" value="'+leaveDay+'"></div></div>' +
+    '<h2>'+esc(wd)+', '+esc(longDate(leaveDay))+'</h2>';
+  if (!isSchoolDay(leaveDay)){
+    html += '<p class="bigcount">No classes: weekend</p>';
+  } else {
+    html += '<p class="bigcount"><strong>'+list.length+'</strong> teacher'+(list.length===1?'':'s')+' on leave</p>';
+    if (!list.length) html += '<p class="muted">No saved leaves for this day.</p>';
+    else html += '<ol class="leavelist">' + list.map(l => {
+      const covered = l.rows.filter(r => r.substitute).length;
+      return '<li><details><summary><span class="who">'+esc(withPos(l.teacher))+'</span>' +
+        '<span class="meta">'+esc(shortRange(l.from, l.to))+', '+covered+' of '+l.rows.length+' class'+(l.rows.length===1?'':'es')+' covered</span>' +
+        '<span class="more"><span class="sh">Show classes and substitutes ▾</span><span class="hd">Hide ▴</span></span></summary>' +
+        '<div class="tablebox"><table><thead><tr><th>Time</th><th>Class</th><th>Section</th><th>Substitute</th></tr></thead><tbody>' +
+        l.rows.slice().sort((a,b) => SLOTS.findIndex(s => s.time === a.time) - SLOTS.findIndex(s => s.time === b.time)).map(r =>
+          '<tr><td>'+esc(r.time)+'</td><td>'+esc(r.subject)+'</td><td>'+esc(r.section)+'</td>' +
+          (r.substitute ? '<td>'+esc(dn(r.substitute))+'</td>' : '<td class="pending">Not yet assigned</td>')+'</tr>').join("") +
+        '</tbody></table></div></details></li>';
+    }).join("") + '</ol>';
+  }
+  html += '<div class="actions"><button class="quiet small" data-act="leaves-refresh"'+(leavesRefreshing?' disabled':'')+'>'+(leavesRefreshing?'Refreshing…':'Refresh')+'</button></div></section></div>';
+  out.innerHTML = html;
+}
+function stepSchoolDay(dir){
+  const d = toD(leaveDay);
+  do { d.setDate(d.getDate() + dir); } while (d.getDay() === 0 || d.getDay() === 6);
+  leaveDay = ymd(d.getFullYear(), d.getMonth()+1, d.getDate()); calMonth = leaveDay.slice(0,7); renderLeaves();
+}
+$("#leavesOut").addEventListener("click", async e => {
+  const day = e.target.closest("[data-day]");
+  if (day){ leaveDay = day.dataset.day; renderLeaves(); const b = document.querySelector('[data-day="'+leaveDay+'"]'); if (b) b.focus(); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const [y, m] = (calMonth || todayYmd().slice(0,7)).split("-").map(Number);
+  if (a.dataset.act === "cal-prev"){ const d = new Date(y, m-2, 1); calMonth = ymd(d.getFullYear(), d.getMonth()+1, 1).slice(0,7); renderLeaves(); }
+  if (a.dataset.act === "cal-next"){ const d = new Date(y, m, 1); calMonth = ymd(d.getFullYear(), d.getMonth()+1, 1).slice(0,7); renderLeaves(); }
+  if (a.dataset.act === "day-prev") stepSchoolDay(-1);
+  if (a.dataset.act === "day-next") stepSchoolDay(1);
+  if (a.dataset.act === "day-today"){ leaveDay = todayYmd(); calMonth = leaveDay.slice(0,7); renderLeaves(); }
+  if (a.dataset.act === "leaves-refresh"){ leavesRefreshing = true; renderLeaves(); await loadBookings(); leavesRefreshing = false; renderLeaves(); }
+});
+$("#leavesOut").addEventListener("change", e => {
+  if (e.target.id === "leaveDayPick" && e.target.value){ leaveDay = e.target.value; calMonth = leaveDay.slice(0,7); renderLeaves(); }
 });
 
 /* ---------- teachers tab ---------- */
@@ -1471,7 +1599,7 @@ async function printForm(){
       '<div class="mrow"><span>TO:</span><span>Reliever Teachers</span></div>' +
       '<div class="mrow" style="margin-bottom:26pt"><span>DATE:</span><span>'+esc(data.filed)+'</span></div><ol>' +
       '<li>This pertains to the Wellness Break of <b>'+esc(data.name)+',</b> from <b>'+esc(data.period)+'</b> which necessitated '+esc(data.pronoun)+' leave from work and official engagements during the said period.</li>' +
-      '<li>In accordance to DepEd Order No. 002, series of 2026 entitled “Wellness Leave Policy” all eligible officials and employees are granted up to (5) days of Wellness Leave per calendar year. To ensure compliance with the No Disruption of Classes Policy and the continuity of learing during the teacher’s absence, the following teachers are hereby designated as relievers for the scheduled classes:</li></ol>' +
+      '<li>In accordance to DepEd Order No. 002, series of 2026 entitled “Wellness Leave Policy” all eligible officials and employees are granted up to (5) days of Wellness Leave per calendar year. To ensure compliance with the No Disruption of Classes Policy and the continuity of learning during the teacher’s absence, the following teachers are hereby designated as relievers for the scheduled classes:</li></ol>' +
       '<table class="t2"><colgroup><col style="width:17%"><col style="width:16%"><col style="width:16%"><col style="width:34%"><col style="width:17%"></colgroup>' +
       '<tr><th>Grade &amp; Section</th><th>Subject</th><th>Time</th><th>Name of Assigned Reliver (With Vacant Period)</th><th>Signature of Reliever</th></tr>'+tableRows+'</table><ol start="3">' +
       '<li>The above-named teachers are directed to serve as relievers for the classes indicated during the period of leave. They are expected to ensure the continuity of instruction and maintain an effective learning environment for the students.</li>' +
