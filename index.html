@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Substitute Planner – Quiot National High School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EE; --paper:#FFFFFF; --ink:#1F2B2E; --muted:#5D6B6E; --line:#C9D1CE;
+  --slate:#2E5B4F; --slate-soft:#DCE8E3; --marker:#F4C542; --warn:#9A3B24; --warn-soft:#F7E3DC;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display:"Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#151B1A; --paper:#1E2624; --ink:#E7ECEA; --muted:#9AA8A5; --line:#34403D;
+    --slate:#86C2AF; --slate-soft:#253531; --marker:#E8B931; --warn:#F0A58E; --warn-soft:#3A2520;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151B1A; --paper:#1E2624; --ink:#E7ECEA; --muted:#9AA8A5; --line:#34403D;
+  --slate:#86C2AF; --slate-soft:#253531; --marker:#E8B931; --warn:#F0A58E; --warn-soft:#3A2520;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding:28px 20px 64px}
+header .school{margin:0;color:var(--muted);font-size:.95rem}
+header h1{font-family:var(--display);font-weight:700;font-size:clamp(2rem,6vw,3rem);line-height:1.05;letter-spacing:-.02em;margin:.1em 0 .35em}
+header p.lede{margin:0;max-width:70ch;color:var(--muted)}
+
+.controls{margin-top:28px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px}
+.field label{display:block;font-weight:700;font-size:.9rem;margin-bottom:6px}
+.field .hint{font-weight:400;color:var(--muted)}
+select,input[type=date]{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;min-height:46px}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--marker);outline-offset:2px}
+#teacher{font-family:var(--display);font-weight:500;font-size:1.15rem}
+
+.status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:32px 0 12px}
+.status h2{font-family:var(--display);font-size:1.4rem;margin:0;flex:1 1 auto}
+.meter{display:flex;gap:5px}
+.meter span{width:22px;height:10px;border-radius:3px;background:var(--line);transition:background .25s}
+.meter span.on{background:var(--slate)}
+.count{color:var(--muted);font-size:.95rem;white-space:nowrap}
+
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:12px 16px;margin:12px 0}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:40px 24px;text-align:center;color:var(--muted);margin-top:32px}
+
+ol.classes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:160px 1fr minmax(220px,300px);align-items:center;gap:18px;background:var(--paper);border:1.5px solid var(--line);border-left:6px solid var(--line);border-radius:12px;padding:14px 18px;transition:border-color .25s}
+.row.covered{border-left-color:var(--slate)}
+.time{font-family:var(--display);font-weight:700;font-size:1.25rem;line-height:1.1;color:var(--slate);font-variant-numeric:tabular-nums;white-space:nowrap}
+.time small{display:block;font-family:var(--body);font-weight:400;font-size:.8rem;color:var(--muted);margin-top:4px}
+.cls .subj{font-family:var(--display);font-weight:700;font-size:1.2rem;line-height:1.2}
+.cls .sec{color:var(--muted)}
+.sub label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.row.covered select{border-color:var(--slate);background:var(--slate-soft);font-weight:700}
+button.link{text-align:left;display:block;background:none;border:none;color:var(--slate);padding:4px 0;min-height:0;font-size:.85rem;font-weight:700;text-decoration:underline;text-underline-offset:3px;margin-top:4px}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;color:var(--slate);background:var(--slate-soft);border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.clash{color:var(--warn);font-size:.85rem;font-weight:700;margin-top:4px}
+.row.editing,.layout .row.editing{grid-template-columns:1fr;border-left-color:var(--marker)}
+.editform h3{font-family:var(--display);font-size:1.05rem;margin:0 0 10px}
+.editgrid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px}
+.editgrid label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+.editform .actions{margin-top:14px}
+@media (max-width:560px){.editgrid{grid-template-columns:1fr}}
+.msg{border-radius:10px;padding:12px 16px;margin:14px 0;background:var(--slate-soft);color:var(--ink)}
+.msg.ok{border-left:5px solid var(--slate)}
+.msg.err{background:var(--warn-soft);color:var(--warn);border-left:5px solid var(--warn)}
+.msg ul{margin:6px 0 6px 18px;padding:0}
+.saved{margin-top:24px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+.saved h2{font-family:var(--display);font-size:1.1rem;margin:0 0 8px}
+.saved ul{list-style:none;margin:0;padding:0}
+.saved li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.saved li:first-child{border-top:none}
+.saved small{color:var(--muted)}
+button.small{min-height:36px;padding:6px 14px}
+button.danger{color:var(--warn);border-color:var(--warn)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.link.inline{display:inline;margin:0 0 0 6px;color:inherit}
+.hiddennote{font-size:.8rem;color:var(--muted);margin-top:4px}
+.savestate{margin:14px 0 0;font-weight:700;color:var(--warn)}
+.savestate.ok{color:var(--slate)}
+.orig{margin:10px 0 0;color:var(--muted);font-size:.85rem}
+@media print{.saved,.savestate,.msg{display:none!important}}
+header{position:relative}
+.themebtn{position:absolute;top:0;right:0}
+@media (max-width:560px){.themebtn{position:static;margin-bottom:12px}}
+@media print{.themebtn{display:none!important}}
+.nofree{color:var(--warn);font-size:.9rem}
+
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
+.layout .slip{margin-top:32px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+.layout .row{grid-template-columns:150px 1fr minmax(180px,240px);gap:14px}
+.layout .time{font-size:1.15rem}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}.layout .slip{position:static;margin-top:8px}}
+.slip{margin-top:40px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px}
+.slip h2{font-family:var(--display);font-size:1.3rem;margin:0 0 4px}
+.slip .meta{color:var(--muted);margin:0 0 14px}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.85rem;color:var(--muted);font-weight:700}
+td.pending{color:var(--warn)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button{font:inherit;font-weight:700;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;border:1.5px solid var(--slate);background:var(--slate);color:var(--paper)}
+button.quiet{background:transparent;color:var(--slate)}
+.toast{color:var(--slate);font-weight:700;align-self:center}
+
+@media (max-width:700px){
+  .controls{grid-template-columns:1fr 1fr}
+  .controls .field:first-child{grid-column:1/-1}
+  .row,.layout .row{grid-template-columns:1fr;gap:10px}
+  .row .time{display:flex;align-items:baseline;gap:10px}
+  .row .time small{margin:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  body{background:#fff;color:#000;font-size:12pt}
+  .controls,.status,ol.classes,.actions,.notice,.empty,header p.lede{display:none!important}
+  .slip{border:none;padding:0;margin:0}
+  th,td{border-bottom:1px solid #999;color:#000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <button class="quiet small themebtn" id="themebtn" type="button"></button>
+    <p class="school">Quiot National High School, Day Department, SY 2026–2027</p>
+    <h1>Substitute planner</h1>
+    <p class="lede">Pick your name and leave dates, choose a substitute for each class, then save. Each list only shows teachers who are free at that time and not already taken by another teacher’s leave.</p>
+  </header>
+
+  <section class="controls" aria-label="Leave details">
+    <div class="field">
+      <label for="teacher">Teacher on leave</label>
+      <select id="teacher"><option value="">Choose your name</option></select>
+    </div>
+    <div class="field">
+      <label for="from">Leave from</label>
+      <input type="date" id="from">
+    </div>
+    <div class="field">
+      <label for="to">Leave until</label>
+      <input type="date" id="to">
+    </div>
+  </section>
+
+  <div id="out"></div>
+</div>
+
+<script>
+const DATA = {"sections":["Grade 7 Faith","Grade 7 Hope","Grade 7 Love","Grade 7 Peace","Grade 7 Unity","Grade 8 Amethyst","Grade 8 Beryl","Grade 8 Citrine","Grade 8 Diamond","Grade 8 Emerald","Grade 9 Gold","Grade 9 Nickel","Grade 9 Platinum","Grade 9 Silver","Grade 9 Zinc","Grade 10 Archimedes","Grade 10 Boyle","Grade 10 Curie","Grade 10 Dalton","Grade 10 Einstein"],"slots":[{"time":"7:00 \u2013 7:45","days":"all","e":{"Grade 7 Faith":{"s":"AP","t":["S. Dagwayan"]},"Grade 7 Hope":{"s":"English","t":["S. Lisondra"]},"Grade 7 Love":{"s":"Math","t":["S. Cabangahan"]},"Grade 7 Peace":{"s":"TLE","t":["C. Duran"]},"Grade 7 Unity":{"s":"Filipino","t":["K. Arita"]},"Grade 8 Amethyst":{"s":"English","t":["W. Medel"]},"Grade 8 Beryl":{"s":"AP","t":["JR Egonia"]},"Grade 8 Citrine":{"s":"MAPEH","t":["E. Beltran"]},"Grade 8 Diamond":{"s":"ESP","t":["Quining"]},"Grade 8 Emerald":{"s":"TLE","t":["A. Dayon"]},"Grade 9 Gold":{"s":"AP","t":["S. Orbeta"]},"Grade 9 Nickel":{"s":"Filipino","t":["L. Mero"]},"Grade 9 Platinum":{"s":"MAPEH","t":["MJ Cagatan"]},"Grade 9 Silver":{"s":"TLE","t":["Medallo"]},"Grade 9 Zinc":{"s":"Science","t":["JM Minoza"]},"Grade 10 Archimedes":{"s":"TLE","t":["H. Bebida"]},"Grade 10 Boyle":{"s":"Science","t":["NJ Barbadillo"]},"Grade 10 Curie":{"s":"English","t":["A. Navarro"]},"Grade 10 Dalton":{"s":"ESP","t":["M. Naval"]},"Grade 10 Einstein":{"s":"MAPEH","t":["N. Navarro"]}}},{"time":"7:45 \u2013 8:30","days":"all","e":{"Grade 7 Faith":{"s":"ESP","t":["J. Compuesto"]},"Grade 7 Hope":{"s":"Science","t":["Velasco"]},"Grade 7 Love":{"s":"MAPEH","t":["Bardon"]},"Grade 7 Peace":{"s":"Filipino","t":["K. Arita"]},"Grade 7 Unity":{"s":"AP","t":["S. Dagwayan"]},"Grade 8 Amethyst":{"s":"Science","t":["C. Yu"]},"Grade 8 Beryl":{"s":"TLE","t":["A. Dayon"]},"Grade 8 Citrine":{"s":"English","t":["W. Medel"]},"Grade 8 Diamond":{"s":"Filipino","t":["JB Anga"]},"Grade 8 Emerald":{"s":"ESP","t":["Quining"]},"Grade 9 Gold":{"s":"English","t":["J. Timogan"]},"Grade 9 Nickel":{"s":"MAPEH","t":["MJ Cagatan"]},"Grade 9 Platinum":{"s":"Filipino","t":["L. Mero"]},"Grade 9 Silver":{"s":"Science","t":["JM Minoza"]},"Grade 9 Zinc":{"s":"Math","t":["J. Belonguel"]},"Grade 10 Archimedes":{"s":"Filipino","t":["M. Yapac"]},"Grade 10 Boyle":{"s":"English","t":["A. Navarro"]},"Grade 10 Curie":{"s":"Science","t":["NJ Barbadillo"]},"Grade 10 Dalton":{"s":"MAPEH","t":["N. Navarro"]},"Grade 10 Einstein":{"s":"Math","t":["I. Invento"]}}},{"time":"8:30 \u2013 9:15","days":"all","e":{"Grade 7 Faith":{"s":"Filipino","t":["K. Arita"]},"Grade 7 Hope":{"s":"Math","t":["S. Cabangahan"]},"Grade 7 Love":{"s":"English","t":["S. Lisondra"]},"Grade 7 Peace":{"s":"MAPEH","t":["Bardon"]},"Grade 7 Unity":{"s":"Science","t":["Velasco"]},"Grade 8 Amethyst":{"s":"Math","t":["B. Lucena"]},"Grade 8 Beryl":{"s":"Filipino","t":["JB Anga"]},"Grade 8 Citrine":{"s":"TLE","t":["A. Dayon"]},"Grade 8 Diamond":{"s":"MAPEH","t":["E. Beltran"]},"Grade 8 Emerald":{"s":"AP","t":["JR Egonia"]},"Grade 9 Gold":{"s":"Filipino","t":["L. Mero"]},"Grade 9 Nickel":{"s":"AP","t":["S. Orbeta"]},"Grade 9 Platinum":{"s":"English","t":["J. Timogan"]},"Grade 9 Silver":{"s":"Math","t":["J. Belonguel"]},"Grade 9 Zinc":{"s":"TLE","t":["Medallo"]},"Grade 10 Archimedes":{"s":"Science","t":["NJ Barbadillo"]},"Grade 10 Boyle":{"s":"Filipino","t":["M. Yapac"]},"Grade 10 Curie":{"s":"MAPEH","t":["N. Navarro"]},"Grade 10 Dalton":{"s":"English","t":["A. Navarro"]},"Grade 10 Einstein":{"s":"TLE","t":["H. Bebida"]}}},{"time":"9:30 \u2013 10:15","days":"all","e":{"Grade 7 Faith":{"s":"Math","t":["S. Cabangahan"]},"Grade 7 Hope":{"s":"AP","t":["S. Dagwayan"]},"Grade 7 Love":{"s":"ESP","t":["J. Compuesto"]},"Grade 7 Peace":{"s":"Science","t":["Velasco"]},"Grade 7 Unity":{"s":"MAPEH","t":["Bardon"]},"Grade 8 Amethyst":{"s":"Filipino","t":["JB Anga"]},"Grade 8 Beryl":{"s":"ESP","t":["Quining"]},"Grade 8 Citrine":{"s":"AP","t":["JR Egonia"]},"Grade 8 Diamond":{"s":"English","t":["W. Medel"]},"Grade 8 Emerald":{"s":"Math","t":["B. Lucena"]},"Grade 9 Gold":{"s":"MAPEH","t":["MJ Cagatan"]},"Grade 9 Nickel":{"s":"Science","t":["JM Minoza"]},"Grade 9 Platinum":{"s":"Math","t":["J. Belonguel"]},"Grade 9 Silver":{"s":"ESP","t":["M. Milan"]},"Grade 9 Zinc":{"s":"AP","t":["S. Orbeta"]},"Grade 10 Archimedes":{"s":"AP","t":["J. Timogan"]},"Grade 10 Boyle":{"s":"Math","t":["I. Invento"]},"Grade 10 Curie":{"s":"ESP","t":["M. Naval"]},"Grade 10 Dalton":{"s":"Filipino","t":["M. Yapac"]},"Grade 10 Einstein":{"s":"English","t":["A. Navarro"]}}},{"time":"10:15 \u2013 11:00","days":"all","e":{"Grade 7 Faith":{"s":"MAPEH","t":["Bardon"]},"Grade 7 Hope":{"s":"ESP","t":["J. Compuesto"]},"Grade 7 Love":{"s":"AP","t":["S. Dagwayan"]},"Grade 7 Peace":{"s":"English","t":["S. Lisondra"]},"Grade 7 Unity":{"s":"TLE","t":["C. Duran"]},"Grade 8 Amethyst":{"s":"TLE","t":["A. Dayon"]},"Grade 8 Beryl":{"s":"MAPEH","t":["E. Beltran"]},"Grade 8 Citrine":{"s":"Science","t":["C. Yu"]},"Grade 8 Diamond":{"s":"Math","t":["B. Lucena"]},"Grade 8 Emerald":{"s":"English","t":["W. Medel"]},"Grade 9 Gold":{"s":"Science","t":["JM Minoza"]},"Grade 9 Nickel":{"s":"Math","t":["J. Belonguel"]},"Grade 9 Platinum":{"s":"TLE","t":["Medallo"]},"Grade 9 Silver":{"s":"AP","t":["S. Orbeta"]},"Grade 9 Zinc":{"s":"ESP","t":["M. Milan"]},"Grade 10 Archimedes":{"s":"English","t":["A. Navarro"]},"Grade 10 Boyle":{"s":"MAPEH","t":["N. Navarro"]},"Grade 10 Curie":{"s":"Math","t":["I. Invento"]},"Grade 10 Dalton":{"s":"TLE","t":["H. Bebida"]},"Grade 10 Einstein":{"s":"Filipino","t":["M. Yapac"]}}},{"time":"11:00 \u2013 11:45","days":"all","e":{"Grade 7 Faith":{"s":"TLE","t":["C. Duran"]},"Grade 7 Hope":{"s":"Filipino","t":["K. Arita"]},"Grade 7 Love":{"s":"Science","t":["Velasco"]},"Grade 7 Peace":{"s":"AP","t":["S. Dagwayan"]},"Grade 7 Unity":{"s":"English","t":["S. Lisondra"]},"Grade 8 Amethyst":{"s":"MAPEH","t":["E. Beltran"]},"Grade 8 Beryl":{"s":"Math","t":["B. Lucena"]},"Grade 8 Citrine":{"s":"ESP","t":["Quining"]},"Grade 8 Diamond":{"s":"TLE","t":["A. Dayon"]},"Grade 8 Emerald":{"s":"Science","t":["C. Yu"]},"Grade 9 Gold":{"s":"Math","t":["J. Belonguel"]},"Grade 9 Nickel":{"s":"English","t":["J. Compuesto"]},"Grade 9 Platinum":{"s":"ESP","t":["M. Milan"]},"Grade 9 Silver":{"s":"MAPEH","t":["MJ Cagatan"]},"Grade 9 Zinc":{"s":"Filipino","t":["L. Mero"]},"Grade 10 Archimedes":{"s":"MAPEH","t":["N. Navarro"]},"Grade 10 Boyle":{"s":"AP","t":["S. Orbeta"]},"Grade 10 Curie":{"s":"AP","t":["Bardon"]},"Grade 10 Dalton":{"s":"AP","t":["J. Timogan"]},"Grade 10 Einstein":{"s":"ESP","t":["M. Naval"]}}},{"time":"12:15 \u2013 1:00","days":"all","e":{"Grade 7 Faith":{"s":"Science","t":["Velasco"]},"Grade 7 Hope":{"s":"TLE","t":["C. Duran"]},"Grade 7 Love":{"s":"Filipino","t":["K. Arita"]},"Grade 7 Peace":{"s":"Math","t":["S. Cabangahan"]},"Grade 7 Unity":{"s":"ESP","t":["J. Compuesto"]},"Grade 8 Amethyst":{"s":"ESP","t":["Quining"]},"Grade 8 Beryl":{"s":"Science","t":["C. Yu"]},"Grade 8 Citrine":{"s":"Filipino","t":["JB Anga"]},"Grade 8 Diamond":{"s":"AP","t":["JR Egonia"]},"Grade 8 Emerald":{"s":"MAPEH","t":["E. Beltran"]},"Grade 9 Gold":{"s":"TLE","t":["Medallo"]},"Grade 9 Nickel":{"s":"ESP","t":["M. Milan"]},"Grade 9 Platinum":{"s":"Science","t":["JM Minoza"]},"Grade 9 Silver":{"s":"Filipino","t":["L. Mero"]},"Grade 9 Zinc":{"s":"MAPEH","t":["MJ Cagatan"]},"Grade 10 Archimedes":{"s":"Math","t":["I. Invento"]},"Grade 10 Boyle":{"s":"ESP","t":["M. Naval"]},"Grade 10 Curie":{"s":"TLE","t":["H. Bebida"]},"Grade 10 Dalton":{"s":"Science","t":["NJ Barbadillo"]},"Grade 10 Einstein":{"s":"AP","t":["J. Timogan"]}}},{"time":"1:00 \u2013 1:45","days":"all","e":{"Grade 7 Faith":{"s":"English","t":["S. Lisondra"]},"Grade 7 Hope":{"s":"MAPEH","t":["Bardon"]},"Grade 7 Love":{"s":"TLE","t":["M. Naval"]},"Grade 7 Peace":{"s":"ESP","t":["Velasco"]},"Grade 7 Unity":{"s":"Math","t":["S. Cabangahan"]},"Grade 8 Amethyst":{"s":"AP","t":["JR Egonia"]},"Grade 8 Beryl":{"s":"English","t":["W. Medel"]},"Grade 8 Citrine":{"s":"Math","t":["B. Lucena"]},"Grade 8 Diamond":{"s":"Science","t":["C. Yu"]},"Grade 8 Emerald":{"s":"Filipino","t":["JB Anga"]},"Grade 9 Gold":{"s":"ESP","t":["M. Milan"]},"Grade 9 Nickel":{"s":"TLE","t":["Medallo"]},"Grade 9 Platinum":{"s":"AP","t":["S. Orbeta"]},"Grade 9 Silver":{"s":"English","t":["J. Timogan"]},"Grade 9 Zinc":{"s":"English","t":["J. Compuesto"]},"Grade 10 Archimedes":{"s":"ESP","t":["A. Dayon"]},"Grade 10 Boyle":{"s":"TLE","t":["H. Bebida"]},"Grade 10 Curie":{"s":"Filipino","t":["M. Yapac"]},"Grade 10 Dalton":{"s":"Math","t":["I. Invento"]},"Grade 10 Einstein":{"s":"Science","t":["NJ Barbadillo"]}}}]};
+
+const SLOTS = DATA.slots;
+const DAYS_LABEL = {all:"Mon to Fri", mth:"Mon to Thu only", fri:"Friday only"};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// Build teacher list and each teacher's main subject
+const teachers = new Set();
+const subjCount = {};
+SLOTS.forEach(slot => {
+  Object.values(slot.e).forEach(v => v.t.forEach(t => {
+    teachers.add(t);
+    if (slot.days === "all") {
+      const base = v.s.split(" ")[0];
+      subjCount[t] = subjCount[t] || {};
+      subjCount[t][base] = (subjCount[t][base] || 0) + 1;
+    }
+  }));
+});
+const surname = n => n.split(" ").slice(-1)[0];
+const TEACHERS = [...teachers].sort((a,b) => surname(a).localeCompare(surname(b)) || a.localeCompare(b));
+const mainSubject = {};
+TEACHERS.forEach(t => {
+  const c = subjCount[t] || {};
+  mainSubject[t] = Object.keys(c).sort((a,b) => c[b]-c[a])[0] || "";
+});
+
+// Teachers per grade level (from the school's list). Anyone not listed is a special teacher.
+const GROUPS = [["g7","Grade 7 teachers"],["g8","Grade 8 teachers"],["g9","Grade 9 teachers"],["g10","Grade 10 teachers"],["sp","Special teachers"]];
+const GRADE_LIST = {
+  g7:  ["S. Cabangahan","S. Dagwayan","S. Lisondra","C. Duran","K. Arita"],
+  g8:  ["W. Medel","JR Egonia","C. Yu","E. Beltran","JB Anga","Quining"],
+  g9:  ["J. Belonguel","L. Mero","MJ Cagatan","JM Minoza","Medallo","M. Milan"],
+  g10: ["I. Invento","NJ Barbadillo","A. Navarro","N. Navarro","M. Naval"]
+};
+const teacherGrade = {};
+TEACHERS.forEach(t => teacherGrade[t] = "sp");
+Object.entries(GRADE_LIST).forEach(([g,list]) => list.forEach(t => teacherGrade[t] = g));
+
+const sel = $("#teacher");
+TEACHERS.forEach(t => {
+  const o = document.createElement("option");
+  o.value = t; o.textContent = t + (mainSubject[t] ? "  (" + mainSubject[t] + ")" : "");
+  sel.appendChild(o);
+});
+
+const API = "https://script.google.com/macros/s/AKfycby_ylbsV5jU_YmkqC0xgSUxccT79IcbWdiYwp2FY5dso1xLOK95t6V1BvSh-Ve1caq8/exec";
+
+let assign = {};    // rowKey -> substitute name
+let edits = {};     // rowKey -> {slot, sec, subj} when a class was changed
+let editing = null;
+let bookings = [];  // every saved row from the Google Sheet
+let loadState = "loading";
+let leaveId = null; // the saved leave currently open, if any
+let dirty = false;
+let saving = false;
+let msg = null;     // {type:"ok"|"err", html}
+const SUBJECTS = [...new Set(SLOTS.flatMap(s => Object.values(s.e).map(v => v.s)))].sort();
+
+/* ---------- Google Sheet ---------- */
+async function loadBookings(){
+  loadState = "loading"; render();
+  try {
+    const r = await fetch(API);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || "Bad response");
+    bookings = j.rows || []; loadState = "ok";
+  } catch(err){ loadState = "error"; }
+  render();
+}
+async function post(body){
+  const r = await fetch(API, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(body)});
+  return r.json();
+}
+
+/* ---------- dates ---------- */
+const toD = s => { const p = s.split("-").map(Number); return new Date(p[0], p[1]-1, p[2]); };
+function schoolOverlap(a1,a2,b1,b2){
+  const s = a1 > b1 ? a1 : b1, e = a2 < b2 ? a2 : b2;
+  if (e < s) return false;
+  const d = toD(s), last = toD(e);
+  for (let i=0; d<=last && i<366; i++){ const w = d.getDay(); if (w>=1 && w<=5) return true; d.setDate(d.getDate()+1); }
+  return false;
+}
+function dates(){
+  const f = $("#from").value, t = $("#to").value;
+  if (!f || !t) return {ok:false, missing:true};
+  if (t < f) return {ok:false, msg:"The end date is before the start date. Check the leave dates."};
+  if (!schoolOverlap(f,t,f,t)) return {ok:false, msg:"These dates fall on a weekend, so there are no classes to cover. Check the leave dates."};
+  return {ok:true, f, t};
+}
+function fmtDate(v){
+  if (!v) return "";
+  return toD(v).toLocaleDateString("en-US",{weekday:"short",month:"long",day:"numeric",year:"numeric"});
+}
+function fmtRange(f,t){ return f===t ? fmtDate(f) : fmtDate(f)+" to "+fmtDate(t); }
+
+/* ---------- availability ---------- */
+function busyAt(slot){
+  const b = new Set();
+  Object.values(slot.e).forEach(v => v.t.forEach(t => b.add(t)));
+  return b;
+}
+// Teachers taken by other saved leaves on overlapping school days
+function blockedAt(time, d){
+  const b = new Map();
+  bookings.forEach(r => {
+    if (r.leaveId === leaveId || !schoolOverlap(r.from, r.to, d.f, d.t)) return;
+    b.set(r.teacher, "on leave");
+    if (r.time === time && r.substitute && !b.has(r.substitute)) b.set(r.substitute, "covering "+r.teacher+"'s class");
+  });
+  return b;
+}
+
+function myRows(me){
+  const rows = [];
+  SLOTS.forEach((slot, i) => {
+    Object.entries(slot.e).forEach(([sec, v]) => {
+      if (v.t.includes(me)) rows.push({key:i+"|"+sec, slot, i, sec, subj:v.s, co:v.t.filter(x => x!==me)});
+    });
+  });
+  return rows;
+}
+function currentRows(me){
+  return myRows(me).map(r => {
+    const ed = edits[r.key];
+    return ed ? {...r, slot:SLOTS[ed.slot], i:ed.slot, sec:ed.sec, subj:ed.subj, co:[], edited:true} : r;
+  }).sort((a,b) => a.i - b.i);
+}
+function myLeaves(me){
+  const m = new Map();
+  bookings.filter(r => r.teacher === me).forEach(r => {
+    if (!m.has(r.leaveId)) m.set(r.leaveId, {leaveId:r.leaveId, from:r.from, to:r.to, rows:[]});
+    m.get(r.leaveId).rows.push(r);
+  });
+  return [...m.values()].sort((a,b) => a.from.localeCompare(b.from));
+}
+
+/* ---------- render ---------- */
+function render(){
+  const me = sel.value, out = $("#out");
+  if (!me){ out.innerHTML = '<div class="empty">Choose your name above to see your classes.</div>'; return; }
+  let html = "";
+
+  if (loadState === "loading") html += '<div class="msg">Loading saved leaves from the Google Sheet…</div>';
+  if (loadState === "error") html += '<div class="notice">Couldn’t reach the Google Sheet, so taken substitutes can’t be checked or saved. Check your internet connection. <button class="link inline" data-act="retry">Try again</button></div>';
+
+  const mine = loadState === "ok" ? myLeaves(me) : [];
+  if (mine.length){
+    html += '<section class="saved"><h2>Your saved leaves</h2><ul>' + mine.map(l => {
+      const covered = l.rows.filter(r => r.substitute).length;
+      const open = l.leaveId === leaveId;
+      return '<li><span><strong>'+esc(fmtRange(l.from,l.to))+'</strong><br><small>'+covered+' of '+l.rows.length+' classes covered</small></span>' +
+        (open ? '<span class="tag">Open now</span>' : '<button class="quiet small" data-act="open" data-id="'+esc(l.leaveId)+'">Open</button>') + '</li>';
+    }).join("") + '</ul>' + (leaveId ? '<button class="link" data-act="new">Start a new leave instead</button>' : '') + '</section>';
+  }
+
+  if (msg) html += '<div class="msg '+msg.type+'" role="status">'+msg.html+'</div>';
+
+  const d = dates();
+  if (!d.ok){
+    html += d.missing ? '<div class="empty">Set your leave dates to see your classes and who is free on those days.</div>'
+                      : '<div class="notice">'+esc(d.msg)+'</div>';
+    out.innerHTML = html; return;
+  }
+
+  const rows = currentRows(me);
+  const perSlot = {}; rows.forEach(r => perSlot[r.i] = (perSlot[r.i]||0) + 1);
+
+  // Drop substitutes that another saved leave has taken in the meantime
+  const dropped = [];
+  rows.forEach(r => {
+    const s = assign[r.key];
+    if (!s) return;
+    const why = blockedAt(r.slot.time, d).get(s) || (busyAt(r.slot).has(s) ? "teaching at this time" : null);
+    if (why){ dropped.push(esc(s)+' at '+esc(r.slot.time)+' ('+esc(why)+')'); delete assign[r.key]; dirty = true; }
+  });
+  if (dropped.length) html += '<div class="notice">Removed because they’re no longer free: '+dropped.join("; ")+'. Choose someone else.</div>';
+
+  const covered = rows.filter(r => assign[r.key]).length;
+  html += '<div class="layout"><div class="left">';
+  html += '<div class="status"><h2>Your classes</h2><div class="meter" aria-hidden="true">' +
+    rows.map(r => '<span class="'+(assign[r.key]?"on":"")+'"></span>').join("") +
+    '</div><span class="count">'+covered+' of '+rows.length+' covered</span></div>';
+
+  if (!rows.length){
+    html += '<div class="empty">No classes found for this teacher.</div>';
+  } else {
+    html += '<ol class="classes">';
+    rows.forEach(r => {
+      if (editing === r.key){
+        const o = myRows(me).find(x => x.key === r.key);
+        const subjList = SUBJECTS.includes(r.subj) ? SUBJECTS : [r.subj, ...SUBJECTS];
+        html += '<li class="row editing"><div class="editform"><h3>Change this class</h3><div class="editgrid">' +
+          '<div><label for="ed-time">Time</label><select id="ed-time">' +
+            SLOTS.map((s,i) => '<option value="'+i+'"'+(i===r.i?' selected':'')+'>'+esc(s.time)+'</option>').join("") + '</select></div>' +
+          '<div><label for="ed-subj">Subject</label><select id="ed-subj">' +
+            subjList.map(s => '<option'+(s===r.subj?' selected':'')+'>'+esc(s)+'</option>').join("") + '</select></div>' +
+          '<div><label for="ed-sec">Section</label><select id="ed-sec">' +
+            DATA.sections.map(s => '<option'+(s===r.sec?' selected':'')+'>'+esc(s)+'</option>').join("") + '</select></div>' +
+          '</div><p class="orig">Original: '+esc(o.slot.time)+', '+esc(o.subj)+', '+esc(o.sec)+'</p>' +
+          '<div class="actions"><button data-act="save-edit" data-k="'+esc(r.key)+'">Save change</button>' +
+          '<button class="quiet" data-act="cancel-edit">Cancel</button>' +
+          (r.edited ? '<button class="quiet" data-act="reset" data-k="'+esc(r.key)+'">Use original schedule</button>' : '') +
+          '</div></div></li>';
+        return;
+      }
+      const busy = busyAt(r.slot), blocked = blockedAt(r.slot.time, d);
+      const takenHere = new Set(Object.entries(assign).filter(([k]) => k !== r.key).map(([,v]) => v));
+      const freeAll = TEACHERS.filter(t => !busy.has(t) && t !== me);
+      const free = freeAll.filter(t => !takenHere.has(t) && !blocked.has(t));
+      const hidden = freeAll.filter(t => blocked.has(t)).length;
+      const base = r.subj.split(" ")[0];
+      const same = free.filter(t => mainSubject[t] === base);
+      const others = free.filter(t => !same.includes(t));
+      const opt = t => '<option value="'+esc(t)+'"'+(assign[r.key]===t?" selected":"")+'>'+esc(t)+'</option>';
+      let opts = '<option value="">Choose a substitute</option>';
+      if (same.length) opts += '<optgroup label="Suggested: also teaches '+esc(base)+'">'+same.map(opt).join("")+'</optgroup>';
+      GROUPS.forEach(([g,label]) => {
+        const list = others.filter(t => teacherGrade[t] === g);
+        if (list.length) opts += '<optgroup label="'+esc(label)+'">'+list.map(opt).join("")+'</optgroup>';
+      });
+      const id = "s"+r.key.replace(/[^a-z0-9]/gi,"_");
+      html += '<li class="row'+(assign[r.key]?" covered":"")+'">' +
+        '<div class="time">'+esc(r.slot.time)+'<small>'+DAYS_LABEL[r.slot.days]+'</small></div>' +
+        '<div class="cls"><div class="subj">'+esc(r.subj)+'</div><div class="sec">'+esc(r.sec)+
+          (r.co.length?' (co-handled with '+esc(r.co.join(", "))+')':'')+(r.edited?'<span class="tag">Changed</span>':'')+'</div>' +
+          (perSlot[r.i] > 1 ? '<div class="clash">Another of your classes is at this time.</div>' : '') +
+          '<button class="link" data-act="edit" data-k="'+esc(r.key)+'" aria-label="Edit time, subject, or section of this class">Edit class</button></div>' +
+        '<div class="sub"><label for="'+id+'">Substitute</label>' +
+          (free.length ? '<select id="'+id+'" data-key="'+esc(r.key)+'">'+opts+'</select>'
+                       : '<div class="nofree">'+(freeAll.length ? 'Every free teacher is already covering a class at this time.' : 'No teacher is free at this time.')+'</div>') +
+          (hidden ? '<div class="hiddennote">'+hidden+' hidden: on leave or covering another leave</div>' : '') +
+        '</div></li>';
+    });
+    html += '</ol>';
+  }
+  html += '</div>';
+
+  // Slip
+  const canSave = loadState !== "error" && !saving && rows.length;
+  const state = saving ? "Saving…" : dirty ? "Not saved yet" : leaveId ? "Saved to the Google Sheet" : "Not saved yet";
+  html += '<section class="slip" aria-label="Substitution summary"><h2>Substitution slip</h2>' +
+    '<p class="meta">'+esc(me)+' on leave: '+esc(fmtRange(d.f,d.t))+'</p><div class="tablebox"><table><thead><tr>' +
+    '<th>Time</th><th>Class</th><th>Section</th><th>Substitute</th></tr></thead><tbody>' +
+    rows.map(r => '<tr><td>'+esc(r.slot.time)+'</td><td>'+esc(r.subj)+'</td><td>'+esc(r.sec)+'</td>' +
+      (assign[r.key]?'<td>'+esc(assign[r.key])+'</td>':'<td class="pending">Not yet assigned</td>')+'</tr>').join("") +
+    '</tbody></table></div>' +
+    '<p class="savestate '+(dirty||!leaveId?'':'ok')+'">'+state+'</p>' +
+    '<div class="actions"><button id="save"'+(canSave?'':' disabled')+'>'+(leaveId?'Save changes':'Save leave')+'</button>' +
+    '<button class="quiet" id="copy">Copy summary</button><button class="quiet" id="print">Print slip</button>' +
+    (leaveId ? '<button class="quiet danger" id="cancelleave"'+(saving?' disabled':'')+'>Cancel this leave</button>' : '<button class="quiet" id="clear">Clear substitutes</button>') +
+    '<span class="toast" id="toast" role="status"></span></div></section>';
+
+  html += '</div>';
+  out.innerHTML = html;
+  out._rows = rows; out._dates = fmtRange(d.f,d.t);
+}
+
+/* ---------- actions ---------- */
+function openLeave(id){
+  const me = sel.value, l = myLeaves(me).find(x => x.leaveId === id);
+  if (!l) return;
+  leaveId = id; assign = {}; edits = {}; editing = null; msg = null;
+  $("#from").value = l.from; $("#to").value = l.to;
+  const orig = myRows(me), used = new Set(), pending = [];
+  l.rows.forEach(s => {
+    const o = orig.find(x => !used.has(x.key) && x.slot.time === s.time && x.sec === s.section);
+    if (!o){ pending.push(s); return; }
+    used.add(o.key);
+    if (o.subj !== s.subject) edits[o.key] = {slot:o.i, subj:s.subject, sec:o.sec};
+    if (s.substitute) assign[o.key] = s.substitute;
+  });
+  pending.forEach(s => {
+    const o = orig.find(x => !used.has(x.key));
+    if (!o) return;
+    used.add(o.key);
+    const si = SLOTS.findIndex(x => x.time === s.time);
+    edits[o.key] = {slot: si < 0 ? o.i : si, subj:s.subject, sec:s.section};
+    if (s.substitute) assign[o.key] = s.substitute;
+  });
+  dirty = false; render();
+}
+function startNew(){
+  leaveId = null; assign = {}; edits = {}; editing = null; msg = null; dirty = false;
+  $("#from").value = ""; $("#to").value = ""; render();
+}
+async function saveLeave(){
+  const me = sel.value, d = dates(), rows = $("#out")._rows || [];
+  if (!d.ok || !rows.length) return;
+  saving = true; msg = null; render();
+  try {
+    const j = await post({action:"save", leaveId, teacher:me, from:d.f, to:d.t,
+      classes: rows.map(r => ({time:r.slot.time, subject:r.subj, section:r.sec, substitute:assign[r.key]||""}))});
+    if (j.ok){
+      leaveId = j.leaveId; bookings = j.rows || bookings; dirty = false;
+      const open = rows.filter(r => !assign[r.key]).length;
+      msg = {type:"ok", html:"Saved to the Google Sheet." + (open ? " "+open+" class"+(open>1?"es still need":" still needs")+" a substitute; you can come back and add them." : "")};
+    } else {
+      let h = esc(j.error || "Couldn’t save.");
+      if (j.conflicts && j.conflicts.length){
+        h += "<ul>" + j.conflicts.map(c => "<li>"+esc(c.time)+": "+esc(c.substitute)+" "+esc(c.reason)+"</li>").join("") + "</ul>Choose someone else for those classes, then save again.";
+      }
+      msg = {type:"err", html:h};
+      try { const g = await (await fetch(API)).json(); if (g.ok) bookings = g.rows; } catch(e){}
+    }
+  } catch(err){
+    msg = {type:"err", html:"Couldn’t reach the Google Sheet. Check your internet connection and try again."};
+  }
+  saving = false; render();
+}
+async function cancelLeave(){
+  if (!leaveId || !confirm("Cancel this saved leave? Its substitutes will be freed up for other teachers.")) return;
+  saving = true; render();
+  try {
+    const j = await post({action:"cancel", leaveId});
+    if (!j.ok) throw new Error(j.error);
+    bookings = j.rows || []; startNew();
+    msg = {type:"ok", html:"Leave cancelled and removed from the Google Sheet."};
+  } catch(err){
+    msg = {type:"err", html:"Couldn’t cancel the leave. Check your internet connection and try again."};
+  }
+  saving = false; render();
+}
+
+function summaryText(){
+  const rows = $("#out")._rows || [];
+  const lines = ["SUBSTITUTION SLIP", "Teacher on leave: "+sel.value, "Dates: "+($("#out")._dates||""), ""];
+  rows.forEach(r => lines.push(r.slot.time+"  |  "+r.subj+" - "+r.sec+"  |  Substitute: "+(assign[r.key]||"Not yet assigned")));
+  return lines.join("\n");
+}
+function currentSlot(k){ const ed = edits[k]; return ed ? SLOTS[ed.slot] : SLOTS[+k.split("|")[0]]; }
+function dropIfBusy(k){ if (assign[k] && busyAt(currentSlot(k)).has(assign[k])) delete assign[k]; }
+function focusEdit(k){ const b = document.querySelector('[data-act="edit"][data-k="'+CSS.escape(k)+'"]'); if (b) b.focus(); }
+function toast(m){ const el=$("#toast"); if(el){ el.textContent=m; setTimeout(()=>{ if(el) el.textContent=""; },2500);} }
+
+document.addEventListener("change", e => {
+  if (e.target === sel){ leaveId = null; assign = {}; edits = {}; editing = null; msg = null; dirty = false;
+    $("#from").value = ""; $("#to").value = ""; render(); return; }
+  if (e.target.id==="from" || e.target.id==="to"){ dirty = true; msg = null; render(); return; }
+  if (e.target.dataset && e.target.dataset.key !== undefined){
+    const k = e.target.dataset.key;
+    if (e.target.value) assign[k] = e.target.value; else delete assign[k];
+    dirty = true; msg = null; render();
+    const again = document.querySelector('select[data-key="'+CSS.escape(k)+'"]');
+    if (again) again.focus();
+  }
+});
+document.addEventListener("click", async e => {
+  const act = e.target.closest && e.target.closest("[data-act]");
+  if (act){
+    const k = act.dataset.k, a = act.dataset.act;
+    if (a === "retry"){ loadBookings(); return; }
+    if (a === "open"){ openLeave(act.dataset.id); return; }
+    if (a === "new"){ startNew(); return; }
+    if (a === "edit"){ editing = k; render(); const f = $("#ed-time"); if (f) f.focus(); return; }
+    if (a === "cancel-edit"){ const k2 = editing; editing = null; render(); focusEdit(k2); return; }
+    if (a === "reset"){ delete edits[k]; editing = null; dropIfBusy(k); dirty = true; render(); focusEdit(k); return; }
+    if (a === "save-edit"){
+      const slot = +$("#ed-time").value, subj = $("#ed-subj").value, sec = $("#ed-sec").value;
+      const o = myRows(sel.value).find(x => x.key === k);
+      if (o.i === slot && o.subj === subj && o.sec === sec) delete edits[k];
+      else edits[k] = {slot, subj, sec};
+      editing = null; dropIfBusy(k); dirty = true; render(); focusEdit(k); return;
+    }
+  }
+  if (e.target.id==="save"){ saveLeave(); return; }
+  if (e.target.id==="cancelleave"){ cancelLeave(); return; }
+  if (e.target.id==="clear"){ assign = {}; dirty = true; render(); }
+  if (e.target.id==="print"){ try{ window.print(); }catch(err){ toast("Printing isn't available here. Use Copy summary instead."); } }
+  if (e.target.id==="copy"){
+    const text = summaryText();
+    try { await navigator.clipboard.writeText(text); toast("Copied"); }
+    catch(err){
+      const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); toast("Copied"); }catch(e2){ toast("Couldn't copy. Select the table and copy it instead."); }
+      ta.remove();
+    }
+  }
+});
+/* ---------- light / dark mode ---------- */
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+function isDark(){ const t = document.documentElement.dataset.theme; return t ? t === "dark" : mq.matches; }
+function paintThemeBtn(){ const b = $("#themebtn"); b.textContent = isDark() ? "Light mode" : "Dark mode"; b.setAttribute("aria-pressed", isDark()); }
+try { const saved = localStorage.getItem("sp-theme"); if (saved) document.documentElement.dataset.theme = saved; } catch(e){}
+$("#themebtn").addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("sp-theme", next); } catch(e){}
+  paintThemeBtn();
+});
+mq.addEventListener && mq.addEventListener("change", paintThemeBtn);
+paintThemeBtn();
+
+render();
+loadBookings();
+</script>
+</body>
+</html>
